@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Immortal extends Thread {
+    private final static Object tieLock =new Object();
 
     private ImmortalUpdateReportCallback updateCallback=null;
     
@@ -65,20 +66,43 @@ public class Immortal extends Thread {
 
     }
 
-    public void fight(Immortal i2) {
-        synchronized(this){
-            synchronized(i2){
+   public void fight(Immortal i2) {
+        class Helper{
+            public void fightSafe(){
                 if (i2.getHealth() > 0) {
                     i2.changeHealth(i2.getHealth() - defaultDamageValue);
-                    this.health += defaultDamageValue;
+                    health += defaultDamageValue;
                     updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
                 } else {
                     updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
                 }
             }
+            
         }
+        int thisHash =System.identityHashCode(this);
+        int enemyHash = System.identityHashCode(i2);
         
-
+        if(thisHash<enemyHash){
+            synchronized (this){
+                synchronized(i2){
+                    new Helper().fightSafe();
+                }
+            }
+        }else if (thisHash>enemyHash){
+            synchronized (i2){
+                synchronized(this){
+                    new Helper().fightSafe();
+                }
+            }
+        }else{
+            synchronized(tieLock){
+                synchronized (this){
+                    synchronized(i2){
+                        new Helper().fightSafe();
+                    }
+                }
+            }
+        }
     }
 
     public void changeHealth(int v) {
