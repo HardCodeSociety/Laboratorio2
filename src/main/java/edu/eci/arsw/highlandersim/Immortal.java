@@ -2,6 +2,7 @@ package edu.eci.arsw.highlandersim;
 
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,8 +22,8 @@ public class Immortal extends Thread {
     private final Random r = new Random(System.currentTimeMillis());
 
     private boolean pause ;
-    
-    public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb) {
+    public boolean c;
+    public Immortal(String name, CopyOnWriteArrayList<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb) {
         super(name);
         this.updateCallback=ucb;
         this.name = name;
@@ -30,11 +31,12 @@ public class Immortal extends Thread {
         this.health = health;
         this.defaultDamageValue=defaultDamageValue;
         this.pause=false;
+        this.c=true;
     }
 
     public void run() {
-
-        while (true) {
+        
+        while (this.health > 0 && c) {
             Immortal im;
              if(pause){
                 synchronized(this){
@@ -53,16 +55,20 @@ public class Immortal extends Thread {
             if (nextFighterIndex == myIndex) {
                 nextFighterIndex = ((nextFighterIndex + 1) % immortalsPopulation.size());
             }
+            if(immortalsPopulation.size() ==1){
+                c=false;
+            }
             im = immortalsPopulation.get(nextFighterIndex);
            
             this.fight(im);
-
+            
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+        System.out.println("HEALTH!!!!!");
 
     }
 
@@ -74,7 +80,9 @@ public class Immortal extends Thread {
                     health += defaultDamageValue;
                     updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
                 } else {
+                    immortalsPopulation.remove(i2);
                     updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+                    
                 }
             }
             

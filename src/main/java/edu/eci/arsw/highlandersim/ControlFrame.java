@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import java.awt.Color;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.JScrollBar;
 
 public class ControlFrame extends JFrame {
@@ -29,13 +30,14 @@ public class ControlFrame extends JFrame {
 
     private JPanel contentPane;
 
-    private List<Immortal> immortals;
+    private CopyOnWriteArrayList<Immortal> immortals;
 
     private JTextArea output;
     private JLabel statisticsLabel;
     private JScrollPane scrollPane;
     private JTextField numOfImmortals;
     private boolean pause=false;
+    private String status;
 
     /**
      * Launch the application.
@@ -57,6 +59,7 @@ public class ControlFrame extends JFrame {
      * Create the frame.
      */
     public ControlFrame() {
+        this.status =  "running";
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 647, 248);
         contentPane = new JPanel();
@@ -78,7 +81,6 @@ public class ControlFrame extends JFrame {
                         im.start();
                     }
                 }
-
                 btnStart.setEnabled(false);
 
             }
@@ -125,6 +127,12 @@ public class ControlFrame extends JFrame {
         JButton btnStop = new JButton("STOP");
         btnStop.setForeground(Color.RED);
         toolBar.add(btnStop);
+        
+        btnStop.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent e){
+                stop();
+            }
+        });
 
         scrollPane = new JScrollPane();
         contentPane.add(scrollPane, BorderLayout.CENTER);
@@ -136,17 +144,25 @@ public class ControlFrame extends JFrame {
         
         statisticsLabel = new JLabel("Immortals total health:");
         contentPane.add(statisticsLabel, BorderLayout.SOUTH);
-
+        
+        
+    }
+    public void stop(){
+        for(Immortal in: immortals){
+            in.stop();
+        }
+        immortals.clear();        
     }
 
-    public List<Immortal> setupInmortals() {
 
+    public CopyOnWriteArrayList<Immortal> setupInmortals() {
+        
         ImmortalUpdateReportCallback ucb=new TextAreaUpdateReportCallback(output,scrollPane);
         
         try {
             int ni = Integer.parseInt(numOfImmortals.getText());
 
-            List<Immortal> il = new LinkedList<Immortal>();
+            CopyOnWriteArrayList<Immortal> il = new CopyOnWriteArrayList<Immortal>();
             
             for (int i = 0; i < ni; i++) {
                 Immortal i1 = new Immortal("im" + i, il, DEFAULT_IMMORTAL_HEALTH, DEFAULT_DAMAGE_VALUE,ucb);
